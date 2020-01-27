@@ -14,7 +14,7 @@ root.resizable(False,False)
 root.configure(bg=rootCol)
 
 computerDelay = 0.5
-fontSize = 12
+fontSize = (windowWidth[0] == 1280 and 20) or 12
 fontType = "Arial"
 backgroundImage = (windowWidth[0] == 1280 and "Blue") or "S_Blue"
 folder = "Uno_Assets"
@@ -33,6 +33,7 @@ canvas.place(relx=0.5, rely=0.5, anchor=CENTER)
 deck = None
 lastPlayed = None
 uno = False
+reverse = False
 Colour = "Red"
 oldDiscardPile = []
 players = []
@@ -57,12 +58,14 @@ darkPseudoBack = "#1F3233" # for upper and lower areas
 drawDeck = Label(canvas, image=images["Deck"], bg=pseudoBackground)
 
 class Player():            
-    def __init__(self, name, anch, y, isTurn, bot):
+    def __init__(self, name, anch, x, y, isTurn, bot, scoreLabelPos):
         self.name = name
         self.hand = []
         self.score = 0 # 500 to win
         self.frame = Frame(canvas, width=0, height=84, bg=darkPseudoBack)
-        self.frame.place(relx=0.5, rely=y, anchor=anch)
+        self.ScoreLabel = Label(root, text=f"{name}: 0", font=fontInfo,bg=rootCol)
+        self.ScoreLabel.place(relx=scoreLabelPos,anchor="n")
+        self.frame.place(relx=x, rely=y, anchor=anch)
         self.objects = []
         self.netObjs = []
         self.bot = bot
@@ -70,6 +73,7 @@ class Player():
         self.drawn = False # serves as a debounce
         self.lastDrawn = None
         players.append(self)
+        self.side = anch
         self.draw(7)
 
     def restart(self, isTurn):
@@ -79,6 +83,7 @@ class Player():
         self.objects = []
         self.netObjs = []
         self.turn = isTurn
+        self.ScoreLabel["fg"] = "Black"
         self.drawn = False
         self.LastDrawn = None
         self.draw(7)
@@ -206,27 +211,42 @@ class Player():
         return points
 
     def endTurn(self, special):
-        #if not special == "Skip" and not special == "Reverse":
+        global reverse
         try: CheckSide.place_forget()
         except: pass
-        if special == "Draw_2":
-            for i in players:
-                if i != self:
-                    i.draw(2)
-        elif special == "Draw_4":
-            for i in players:
-                if i != self:
-                    i.draw(4)
         
-        if special is None:
-            self.turn = False
-            self.drawn = False
-            for i in players:
-                if i != self:
-                    i.turn = True
-                    break
-        
-                
+        increment = 1
+        drawAmt = False
+        if special == "Skip": increment = 2
+        elif special == "Reverse":
+            if len(players) > 2:
+                reverse = not reverse
+            else: # function like a skip turn
+                increment = 2
+        elif special == "Draw_2": drawAmt = 2
+        elif special == "Draw_4": drawAmt = 4
+        self.turn = False
+        self.drawn = False
+        self.ScoreLabel["fg"] = "Black"
+        # get position in list
+        for i, v in enumerate(players):
+            if v == self:
+                n = i
+                break
+        # find next player's turn
+        if reverse: n -= increment
+        else: n += increment
+        if n > len(players)-1: n -= len(players)
+        elif n < 0: n += len(players)
+
+        plr = players[n]
+        if drawAmt > 0:
+            plr.draw(drawAmt)
+            plr.endTurn(None)
+        else:
+            plr.turn = True
+            plr.ScoreLabel["fg"] = "Red"
+                      
     def drawFromDeck(self):
         if self.turn and not self.drawn:
             self.drawn = True
@@ -257,8 +277,9 @@ def gameOver(winner):
     for plr in players:
         winner.score += plr.handWorth()
         plr.restart(False)
-    UpdateScore()
     players[0].turn = True
+    players[0].ScoreLabel["fg"] = "Red"
+    winner.ScoreLabel["text"] = f"{winner.name}: {winner.score}"
 
 def changeColour(col):
     global Colour, lastPlayed
@@ -275,11 +296,6 @@ def addColour(Colour, x, y, anch):
     ButtonFrame = Frame(ColourPicker, width=100, height=100, bg=Colour)
     ButtonFrame.place(relx=x, rely=y, anchor=anch)
     ButtonFrame.bind("<Button-1>", lambda e: changeColour(Colour))
-
-def UpdateScore():
-    ScoreLabel["text"] = ""
-    for plr in players:
-        ScoreLabel["text"] += f"{plr.name}: {plr.score}  \t"
 
 def isValidCard(card):
     if card.find("Wild") == -1 and lastPlayed[:lastPlayed.find("_")] != card[:card.find("_")] and lastPlayed[lastPlayed.find("_")+1:] != card[card.find("_")+1:]:
@@ -306,7 +322,6 @@ for i in deck:
         images[i]
     except:
         images[i] = PhotoImage(file=name)
-        
     
 ColourPicker = Frame(canvas, width=200, height=200)
 ColourChosen = Frame(canvas, width=200, height=200)
@@ -315,14 +330,14 @@ addColour("Blue", 0,1,  "sw")
 addColour("Green", 1, 0, "ne")
 addColour("Yellow", 1, 1, "se")
 
-ScoreLabel = Label(root, text="", font=fontInfo,bg=rootCol)
-ScoreLabel.place(relx=0.5,anchor="n")
-
-player = Player("Player1", "s", 1, False, False)  
-computer = Player("Computer", "n", 0, False, True)
+player = Player("Player", "s", 0.5, 1, False, False, .2)  
+#computer2 = Player("Computer2", "e", 0, 0, False, True, .4)
+computer = Player("Computer3", "n", 0.5, 0, False, True, .6)
+#computer3 = Player("Computer4", "w", 0, 0, False, True, .8)
 
 lastPlayed = deck[0]
 player.turn = True
+player.ScoreLabel["fg"] = "Red"
 if lastPlayed.find("Skip") != -1 or lastPlayed.find("Reverse") != -1:
     player.endTurn(lastPlayed[lastPlayed.find("_")+1:])
 elif lastPlayed == "Wild_Draw":
@@ -349,7 +364,6 @@ endButton.place(relx=0.5,rely=0.8, anchor=CENTER)
 
 UnoSign = Label(canvas, width=410, height=288, image=images["UNO"], bg=pseudoBackground)
 root.update()
-UpdateScore()
 
 while True:
     sleep(0.01)
