@@ -62,9 +62,9 @@ class Player():
         self.name = name
         self.hand = []
         self.score = 0 # 500 to win
-        self.frame = Frame(canvas, width=0, height=84, bg=darkPseudoBack)
+        self.frame = Frame(canvas, width=59, height=84, bg=darkPseudoBack)
         self.ScoreLabel = Label(root, text=f"{name}: 0", font=fontInfo,bg=rootCol)
-        self.ScoreLabel.place(relx=scoreLabelPos,anchor="n")
+        self.ScoreLabel.place(relx=scoreLabelPos,anchor="n")        
         self.frame.place(relx=x, rely=y, anchor=anch)
         self.objects = []
         self.netObjs = []
@@ -73,7 +73,10 @@ class Player():
         self.drawn = False # serves as a debounce
         self.lastDrawn = None
         players.append(self)
-        self.side = anch
+        if anch == "s" or anch == "n":
+            self.side="H" # Horizontal
+        else:
+            self.side = "V" # Vertical
         self.draw(7)
 
     def restart(self, isTurn):
@@ -165,13 +168,16 @@ class Player():
             self.endTurn(None)
 
     def updateHand(self):
-        self.frame["width"] = (len(self.objects))*59
+        if self.side == "H": # Horizontal
+            self.frame["width"] = len(self.objects)*59 # 58 + 1
+        else:
+            self.frame["height"] = len(self.objects)*84 # 84 + 1
         i = 1
         for obj in self.objects:
-            try:
+            if self.side == "H":
                 obj.place(relx=i/len(self.objects), rely=0, anchor="ne")
-            except Exception as e:
-                print(e)
+            else:
+                obj.place(relx=0,rely=i/len(self.objects), anchor="sw")
             i += 1
             root.update()
             
@@ -258,7 +264,41 @@ class Player():
             else:
                 CheckSide.place(relx=0.35, rely=0.5, anchor="w")
                 checkImage["image"] = images[card]
-                
+
+    def botPlay(self):
+        usableCards = []
+        for card in self.hand:
+            # not wild, not right colour, not right type
+            if isValidCard(card):
+                usableCards.append(card)
+        if len(usableCards) == 0:
+            self.draw(1)
+            if isValidCard(self.hand[-1]):
+                self.useCard(None, card)
+            else:
+                self.endTurn(None)
+        else:
+            canPlayWild = True
+            appearances = {}
+            for card in usableCards:
+                # same Colour owned
+                if lastPlayed[:lastPlayed.find("_")] != card[:card.find("_")]:
+                    canPlayWild = False
+                try:
+                    appearances[card[:card.find("_")]] += 1
+                except:
+                    appearances[card[:card.find("_")]] = 1
+            mostAppeared = [None, 0]
+            for i in appearances:
+                if appearances[i] > mostAppeared[1]:
+                    mostAppeared = [i, appearances[i]]
+            card = ""
+            for i in usableCards:
+                if mostAppeared[0] != i[:i.find("_")]:
+                    card = i
+            if card == "": card = usableCards[random(0, len(usableCards)-1)]
+            self.useCard(None, card)
+            
 def generateDeck(dictionary):
     unshuffledDeck = []
     for i, value in enumerate(cardsInDeck):
@@ -331,9 +371,9 @@ addColour("Green", 1, 0, "ne")
 addColour("Yellow", 1, 1, "se")
 
 player = Player("Player", "s", 0.5, 1, False, False, .2)  
-#computer2 = Player("Computer2", "e", 0, 0, False, True, .4)
-computer = Player("Computer3", "n", 0.5, 0, False, True, .6)
-#computer3 = Player("Computer4", "w", 0, 0, False, True, .8)
+computer1 = Player("Computer2", "e", 1, 0.5, False, True, .4)
+computer2 = Player("Computer3", "n", 0.5, 0, False, True, .6)
+computer3 = Player("Computer4", "w", 0, 0.5, False, True, .8)
 
 lastPlayed = deck[0]
 player.turn = True
@@ -370,36 +410,7 @@ while True:
     root.update()
     if not player.turn:
         sleep(computerDelay)
-        usableCards = []
-        for card in computer.hand:
-            # not wild, not right colour, not right type
-            if isValidCard(card):
-                usableCards.append(card)
-        if len(usableCards) == 0:
-            computer.draw(1)
-            if isValidCard(computer.hand[-1]):
-                computer.useCard(None, card)
-            else:
-                computer.turn = False
-                player.turn = True
-        else:
-            canPlayWild = True
-            appearances = {}
-            for card in usableCards:
-                # same Colour owned
-                if lastPlayed[:lastPlayed.find("_")] != card[:card.find("_")]:
-                    canPlayWild = False
-                try:
-                    appearances[card[:card.find("_")]] += 1
-                except:
-                    appearances[card[:card.find("_")]] = 1
-            mostAppeared = [None, 0]
-            for i in appearances:
-                if appearances[i] > mostAppeared[1]:
-                    mostAppeared = [i, appearances[i]]
-            card = ""
-            for i in usableCards:
-                if mostAppeared[0] != i[:i.find("_")]:
-                    card = i
-            if card == "": card = usableCards[random(0, len(usableCards)-1)]
-            computer.useCard(None, card)
+        for i in players:
+            if i.turn:
+                i.botPlay()
+                brea
