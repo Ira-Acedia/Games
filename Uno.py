@@ -6,15 +6,17 @@ from threading import Thread
 
 rootCol = "lightgoldenrodyellow"
 root = Tk()
-root.geometry("1300x800")
+windowWidth = (root.winfo_screenwidth() > 1350 and root.winfo_screenheight() > 850 and [1280, 1300]) or [1126, 1150]
+windowHeight = (windowWidth[0] == 1280 and [720, 800]) or [634, 660]
+root.geometry(f"{windowWidth[1]}x{windowHeight[1]}")
 root.title("Uno")
 root.resizable(False,False)
 root.configure(bg=rootCol)
 
 computerDelay = 0.5
-fontSize = 20
+fontSize = 12
 fontType = "Arial"
-backgroundImage = "Blue"
+backgroundImage = (windowWidth[0] == 1280 and "Blue") or "S_Blue"
 folder = "Uno_Assets"
 cardsInDeck = {
     "Wilds": {"Wild": 4, "Wild_Draw": 4},
@@ -26,7 +28,7 @@ cardsInDeck = {
 
 cardsRemaining = []
 fontInfo = (fontType, fontSize)
-canvas = Canvas(root, width=1280, height=720)
+canvas = Canvas(root, width=windowWidth[0], height=windowHeight[0])
 canvas.place(relx=0.5, rely=0.5, anchor=CENTER)
 deck = None
 lastPlayed = None
@@ -42,7 +44,12 @@ images = {"Red": PhotoImage(file=f"{folder}/Table_0.png"), # Dark Red
           "Back": PhotoImage(file=f"{folder}/Back.png"), # Back of card
           "Deck": PhotoImage(file=f"{folder}/Deck.png"), # Deck image (for drawing cards)
           "UNO": PhotoImage(file=f"{folder}/Logo.png"), # big sign
-          "UNO_Button": PhotoImage(file=f"{folder}/UnoButton.png")
+          "UNO_Button": PhotoImage(file=f"{folder}/UnoButton.png"),
+          "S_Red": PhotoImage(file=f"{folder}/S_Table_0.png"), # Dark red for smaller resolutions
+          "S_Purple": PhotoImage(file=f"{folder}/Table_1.png"),
+          "S_Green": PhotoImage(file=f"{folder}/Table_2.png"),
+          "S_Blue": PhotoImage(file=f"{folder}/Table_3.png"),
+          "S_B_Green": PhotoImage(file=f"{folder}/Table_4.png")
           }
 
 pseudoBackground = "#40686A" # makes images "transparent" background
@@ -272,7 +279,7 @@ def addColour(Colour, x, y, anch):
 def UpdateScore():
     ScoreLabel["text"] = ""
     for plr in players:
-        ScoreLabel["text"] += f"{plr.name}: {plr.score}\t"
+        ScoreLabel["text"] += f"{plr.name}: {plr.score}  \t"
 
 def isValidCard(card):
     if card.find("Wild") == -1 and lastPlayed[:lastPlayed.find("_")] != card[:card.find("_")] and lastPlayed[lastPlayed.find("_")+1:] != card[card.find("_")+1:]:
@@ -288,13 +295,13 @@ canvas.create_image(0, 0, anchor="nw", image=images[backgroundImage])
 drawDeck.place(relx=0.58, rely=0.5, anchor=CENTER)
 drawDeck.bind("<Button-1>", lambda e: player.drawFromDeck())
 UnoButton = Label(canvas, width=82, height=58, image=images["UNO_Button"], bg=pseudoBackground)
-UnoButton.place(relx=0.58,rely=0.6, anchor="n")
+UnoButton.place(relx=0.58,rely=0.63, anchor="n")
 UnoButton.bind("<Button-1>", lambda e: unoTrue())
 root.update()
 
 deck = generateDeck(cardsInDeck)
 for i in deck:
-    name = f"Uno_Assets/{i}.png"
+    name = f"{folder}/{i}.png"
     try:
         images[i]
     except:
@@ -382,4 +389,3 @@ while True:
                     card = i
             if card == "": card = usableCards[random(0, len(usableCards)-1)]
             computer.useCard(None, card)
-           
