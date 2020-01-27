@@ -94,8 +94,7 @@ class Player():
                 toBeDestroyed[0].destroy()
                 self.objects.pop(toBeDestroyed[1])
                 break
-
-        oldDiscardPile.append(lastPlayed)
+        oldDiscardPile.append(card)
         self.updateHand()
         usedPileCard = Label(canvas, image=images[card], bg=pseudoBackground)
         usedPileCard.place(relx=0.5, rely=0.5, anchor=CENTER)
@@ -183,8 +182,10 @@ class Player():
                 sleep(0.1)
         except Exception as e:
             print(e)
-            deck = shuffle(oldDiscardPile)
+            deck = oldDiscardPile
+            shuffle(deck)
             oldDiscardPile = []
+            self.draw(amount)
 
     def handWorth(self):
         points = 0
@@ -198,9 +199,9 @@ class Player():
         return points
 
     def endTurn(self, special):
-        if not special == "Skip" and not special == "Reverse":
-            try: CheckSide.place_forget()
-            except: pass
+        #if not special == "Skip" and not special == "Reverse":
+        try: CheckSide.place_forget()
+        except: pass
         if special == "Draw_2":
             for i in players:
                 if i != self:
@@ -209,7 +210,8 @@ class Player():
             for i in players:
                 if i != self:
                     i.draw(4)
-        if not special == "Skip" and not special == "Reverse":
+        
+        if special is None:
             self.turn = False
             self.drawn = False
             for i in players:
@@ -329,6 +331,7 @@ elif lastPlayed.find("Draw") != -1: # not wild, normal draw
 deck.pop(0)
 usedPileCard = Label(canvas, image=images[lastPlayed], bg=pseudoBackground)
 usedPileCard.place(relx=0.5, rely=0.5, anchor=CENTER)
+oldDiscardPile.append(lastPlayed)
 CheckSide = Frame(canvas, width=100,height=200,bg=pseudoBackground)
 checkImage = Label(CheckSide, image = images[lastPlayed])
 checkImage.place(relx=0.5,rely=0,anchor="n")
@@ -379,4 +382,4 @@ while True:
                     card = i
             if card == "": card = usableCards[random(0, len(usableCards)-1)]
             computer.useCard(None, card)
-            
+           
