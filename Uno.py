@@ -4,7 +4,7 @@ from random import shuffle
 from random import randint as random
 from threading import Thread
 
-Adjust = "Auto" # Change this to anything else to fix the screen size.
+Adjust = "Auto"
 
 # Initalise Window
 rootCol = "lightgoldenrodyellow"
@@ -304,21 +304,28 @@ class Player():
             appearances = {}
             for card in usableCards:
                 # same Colour owned
-                if lastPlayed[:lastPlayed.find("_")] != card[:card.find("_")]:
+                if lastPlayed[:lastPlayed.find("_")] == card[:card.find("_")]:
                     canPlayWild = False
                 try:
                     appearances[card[:card.find("_")]] += 1
                 except:
                     appearances[card[:card.find("_")]] = 1
+            if not canPlayWild:
+                while "Wild_Draw" in usableCards:
+                    usableCards.remove("Wild_Draw")
+                        
             mostAppeared = [None, 0]
             for i in appearances:
                 if appearances[i] > mostAppeared[1]:
                     mostAppeared = [i, appearances[i]]
             card = ""
             for i in usableCards:
-                if mostAppeared[0] != i[:i.find("_")]:
+                if mostAppeared[0] == i[:i.find("_")]:
                     card = i
-            if card == "": card = usableCards[random(0, len(usableCards)-1)]
+            if card == "":
+                # For debugging
+                print(f"{appearances}\n\n{mostAppeared} and {canPlayWild}, Unable to use card\n*******************")
+                card = usableCards[random(0, len(usableCards)-1)]
             self.useCard(None, card)
             
 def generateDeck(dictionary):
