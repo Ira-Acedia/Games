@@ -4,14 +4,17 @@ from random import shuffle
 from random import randint as random
 from threading import Thread
 
+Adjust = "Auto" # Change this to anything else to fix the screen size.
+
 # Initalise Window
 rootCol = "lightgoldenrodyellow"
-root = Tk(bg=rootCol)
-windowWidth = (root.winfo_screenwidth() > 1350 and root.winfo_screenheight() > 850 and [1280, 1300]) or [1126, 1150]
-windowHeight = (windowWidth[0] == 1280 and [720, 800]) or [634, 660]
+root = Tk()
+windowWidth = (Adjust == "Auto" and root.winfo_screenwidth() > 1350 and root.winfo_screenheight() > 850 and [1280, 1300]) or (Adjust == "Auto" and [1126, 1150]) or [1280, 1300]
+windowHeight = (Adjust == "Auto" and windowWidth[0] == 1280 and [720, 800]) or (Adjust == "Auto" and [634, 660]) or [720, 800]
 root.geometry(f"{windowWidth[1]}x{windowHeight[1]}")
 root.title("Uno")
 root.resizable(False,False)
+root.configure(bg=rootCol)
 
 # Variables you can change
 computerDelay = 1
@@ -184,16 +187,15 @@ class Player():
     def updateHand(self):
         # Visual representation of cards in hands
         if self.side == "H": # Horizontal
-            self.frame["width"] = len(self.objects)*59 # 58 + 1
+            self.frame["width"] = len(self.objects)*59 # 58 pixels
         else:
-            self.frame["height"] = len(self.objects)*84 # 84 + 1
-        i = 1
-        for obj in self.objects:
+            self.frame["height"] = (len(self.objects)+2)*(84//2.5)# 84 pixels
+        for i, obj in enumerate(self.objects, 1):
             if self.side == "H":
                 obj.place(relx=i/len(self.objects), rely=0, anchor="ne")
             else:
-                obj.place(relx=0,rely=i/len(self.objects), anchor="sw")
-            i += 1
+                i -= 2
+                obj.place(relx=0, rely=i/len(self.objects), anchor="nw")
             root.update()
             
     def add(self, card):
@@ -375,17 +377,15 @@ def makePlayers(n):
     try: n = int(n.get())
     except: n = 2
     # if amount < 2 or > 4, you get forced to have 2 and 4, respectively.
-    print(n)
     if n <= 2:
-        player = player = Player("Player", "s", 0.5, 1, False, False, .35)
+        player = Player("Player", "s", 0.5, 1, True, False, .35)
         computer1 = Player("Computer2", "n", 0.5, 0, False, True, .7)
     elif n >= 3: 
-        player = player = Player("Player", "s", 0.5, 1, False, False, .2)
+        player = Player("Player", "s", 0.5, 1, True, False, .2)
         computer1 = Player("Computer2", "e", 1, 0.5, False, True, .4)
         computer2 = Player("Computer3", "n", 0.5, 0, False, True, .6)
         if n >= 4:
             computer3 = Player("Computer4", "w", 0, 0.5, False, True, .8)
-    player.turn = True
     player.ScoreLabel["fg"] = "Red"
 
 # Background
@@ -429,7 +429,15 @@ addColour("Blue", 0,1,  "sw")
 addColour("Green", 1, 0, "ne")
 addColour("Yellow", 1, 1, "se")
 
+# Put top of card into discard pile, act accordingly to result
+lastPlayed = deck[0]
+deck.pop(0)
+usedPileCard = Label(canvas, image=images[lastPlayed], bg=pseudoBackground)
+usedPileCard.place(relx=0.5, rely=0.5, anchor=CENTER)
+oldDiscardPile.append(lastPlayed)
+
 # Create UI for choosing whether to use the card drawn or not
+CheckSide = Frame(canvas, width=100,height=200,bg=pseudoBackground)
 checkImage = Label(CheckSide, image = images[lastPlayed])
 checkImage.place(relx=0.5,rely=0,anchor="n")
 useButton = Button(CheckSide, text="Use Card", command=lambda: player.useCard(None, player.lastDrawn))
@@ -439,8 +447,6 @@ endButton.place(relx=0.5,rely=0.8, anchor=CENTER)
 
 makePlayers(playerCount)
 
-# Put top of card into discard pile, act accordingly to result
-lastPlayed = deck[0]
 if lastPlayed.find("Skip") != -1 or lastPlayed.find("Reverse") != -1:
     player.endTurn(lastPlayed[lastPlayed.find("_")+1:])
 elif lastPlayed == "Wild_Draw":
@@ -452,11 +458,6 @@ elif lastPlayed.find("Wild") != -1:
 elif lastPlayed.find("Draw") != -1: # not wild, normal draw
     player.draw(2)
     player.endTurn(None)
-    
-deck.pop(0)
-usedPileCard = Label(canvas, image=images[lastPlayed], bg=pseudoBackground)
-usedPileCard.place(relx=0.5, rely=0.5, anchor=CENTER)
-oldDiscardPile.append(CheckSide = Frame(canvas, width=100,height=200,bg=pseudoBackground)
 
 # Set up Uno symbol
 UnoSign = Label(canvas, width=410, height=288, image=images["UNO"], bg=pseudoBackground)
