@@ -1,7 +1,7 @@
+import operator
 from tkinter import *
 from time import sleep
 from random import shuffle
-from random import randint as random
 from threading import Thread
 
 Adjust = "Auto"
@@ -9,15 +9,16 @@ Adjust = "Auto"
 # Initalise Window
 rootCol = "lightgoldenrodyellow"
 root = Tk()
-windowWidth = (Adjust == "Auto" and root.winfo_screenwidth() > 1350 and root.winfo_screenheight() > 850 and [1280, 1300]) or (Adjust == "Auto" and [1126, 1150]) or [1280, 1300]
+windowWidth = (Adjust == "Auto" and root.winfo_screenwidth() >= 1350 and root.winfo_screenheight() >= 850 and [1280, 1300]) or (Adjust == "Auto" and [1126, 1150]) or [1280, 1300]
 windowHeight = (Adjust == "Auto" and windowWidth[0] == 1280 and [720, 800]) or (Adjust == "Auto" and [634, 660]) or [720, 800]
 root.geometry(f"{windowWidth[1]}x{windowHeight[1]}")
 root.title("Uno")
 root.resizable(False,False)
 root.configure(bg=rootCol)
 
-# Variables you can change
-computerDelay = 1
+# Changeable variables
+computerDelay = 1 # Feels more realistic (thinking time)
+drawInterval = 0.1 # makes it look nicer
 fontSize = (windowWidth[0] == 1280 and 20) or 12
 fontType = "Arial"
 backgroundImage = (windowWidth[0] == 1280 and "Blue") or "S_Blue"
@@ -75,7 +76,6 @@ class Player():
         self.ScoreLabel.place(relx=scoreLabelPos,anchor="n")        
         self.frame.place(relx=x, rely=y, anchor=anch)
         self.objects = []
-        self.netObjs = []
         self.bot = bot
         self.turn = isTurn
         self.drawn = False # serves as a debounce
@@ -92,7 +92,6 @@ class Player():
             i.destroy()
         self.hand = []
         self.objects = []
-        self.netObjs = []
         self.turn = isTurn
         self.ScoreLabel["fg"] = "Black"
         self.drawn = False
@@ -101,24 +100,15 @@ class Player():
         
     def useCard(self, event, card):
         global lastPlayed, Colour, uno
-        # why you trying to cheat fool
+        # why you trying to cheat
         if not self.turn or not Colour or not isValidCard(card):
             return
 
         # destroy used card from hand
-        toBeDestroyed = [None, 0]
-        for i in range(len(self.hand)):
-            if self.hand[i] == card:
-                self.hand.pop(i)
-                toBeDestroyed = [self.objects[i], i]
-                break
-
-        for i in range(1, len(self.netObjs) + 1):
-            i *= -1 # Reverse indexing to find "faster" during long games
-            if self.netObjs[i] == toBeDestroyed[0]:
-                toBeDestroyed[0].destroy()
-                self.objects.pop(toBeDestroyed[1])
-                break
+        self.objects[self.hand.index(card)].destroy()
+        self.objects.pop(self.hand.index(card))
+        self.hand.remove(card)
+        
         # Add card to discard pile, update hand
         oldDiscardPile.append(card)
         self.updateHand()
@@ -127,51 +117,36 @@ class Player():
         ColourChosen.place_forget()
         # give colour change option for wild card, make sure to change _Draw to _Colour
         viableWild = True
+        
         if card.find("Wild") != -1:
             # checks if wild card draw 4 was legally played
-            if card.find("Draw") != -1:
-                for i in self.hand:
-                    if i[:i.find("_")] == lastPlayed[:lastPlayed.find("_")]:
-                        viableWild = False
-                        break
+            if card.find("Draw") != -1 and lastPlayed[:lastPlayed.find("_")] in ''.join(self.hand):
+                viableWild = False
                     
             if not self.bot:
                 changeColour(None)
             else:
                 # bot has to think card what colour he wants. :>
-                appearances = {"Green": 0, "Blue": 0, "Red": 0, "Yellow": 0}
-                for card in self.hand:
-                    col = card[:card.find("_")]
-                    try:
-                        appearances[col] += 1
-                    except:
-                        pass
-                mostAppeared = [None, 0]
-                for i in appearances:
-                    if appearances[i] >= mostAppeared[1]:
-                        mostAppeared = [i, appearances[i]]
-                changeColour(mostAppeared[0])
+                string = ''.join(self.hand)
+                appearances = {"Green": string.count("Green"), "Blue": string.count("Blue"), "Red": string.count("Red"), "Yellow": string.count("Yellow")}
+                # most appeared card
+                changeColour(max(appearances.items(), key=operator.itemgetter(1))[0])
         else: # peasant card used
             lastPlayed = card
 
         # finished game wow
-        if len(self.hand) == 0:
-            gameOver(self)
-            return
+        if len(self.hand) == 0: gameOver(self); return
         elif len(self.hand) == 1: # check if player legally announced uno
             if uno:
                 UnoSign.place(relx=0.5, rely=0.5, anchor=CENTER)
                 root.after(500, lambda: UnoSign.place_forget())
-            else:
-                self.draw(2)
+            else: self.draw(2)
 
         uno = False
-
+        
         # Let action cards work accordingly
-        if card.find("Reverse") != -1:
-            self.endTurn("Reverse")
-        elif card.find("Skip") != -1:
-            self.endTurn("Skip")
+        if card.find("Reverse") != -1 or card.find("Skip") != -1:
+            self.endTurn(card[card.find("_")+1:])
         elif card == "Wild_Draw" != -1:
             # check viable
             if viableWild:
@@ -201,7 +176,6 @@ class Player():
     def add(self, card):
         # Add card to hand
         self.objects.append(Label(self.frame, anchor="nw", image=images[card], bg=darkPseudoBack))
-        self.netObjs.append(self.objects[-1])
         if not self.bot:
             self.objects[-1].bind("<Button-1>", lambda e: self.useCard(e, card))
         self.updateHand()
@@ -216,7 +190,7 @@ class Player():
                 if self.bot: self.add("Back")
                 else: self.add(deck[0])
                 deck.pop(0)
-                sleep(0.1)
+                sleep(drawInterval)
         except Exception as e:
             # oh no! Ran out of cards. Reset deck with used cards.
             deck = oldDiscardPile
@@ -230,7 +204,7 @@ class Player():
         for card in self.hand:
             if card.find("Wild") > -1:
                 points += 50
-            elif card.find("Skip") or card.find("Draw") or card.find("Reverse"):
+            elif len(card[card.find("_") + 1:]) > 1: # can't possibly be a single digit number, must be action card
                 points += 20
             else:
                 points += int(card[card.find("_") + 1:])
@@ -256,10 +230,7 @@ class Player():
         self.drawn = False
         self.ScoreLabel["fg"] = "Black"
         # get position in list of current player
-        for i, v in enumerate(players):
-            if v == self:
-                n = i
-                break
+        n = players.index(self)
         # find next player's turn
         if reverse: n -= increment
         else: n += increment
@@ -287,45 +258,33 @@ class Player():
                 checkImage["image"] = images[card]
 
     def botPlay(self):
-        # Self-Note: MAKE THIS BETTER
         usableCards = []
         for card in self.hand:
-            # not wild, not right colour, not right type
             if isValidCard(card):
                 usableCards.append(card)
+                
         if len(usableCards) == 0:
+            # No playable cards, so draw and try and use that.
             self.draw(1)
             if isValidCard(self.hand[-1]):
                 self.useCard(None, card)
             else:
                 self.endTurn(None)
         else:
-            canPlayWild = True
-            appearances = {}
-            for card in usableCards:
-                # same Colour owned
-                if lastPlayed[:lastPlayed.find("_")] == card[:card.find("_")]:
-                    canPlayWild = False
-                try:
-                    appearances[card[:card.find("_")]] += 1
-                except:
-                    appearances[card[:card.find("_")]] = 1
-            if not canPlayWild:
+            # There are playable cards!
+            
+            # If can't play wild draw 4s, remove from usable cards
+            if lastPlayed[:lastPlayed.find("_")] in usableCards:
                 while "Wild_Draw" in usableCards:
                     usableCards.remove("Wild_Draw")
-                        
-            mostAppeared = [None, 0]
-            for i in appearances:
-                if appearances[i] > mostAppeared[1]:
-                    mostAppeared = [i, appearances[i]]
-            card = ""
-            for i in usableCards:
-                if mostAppeared[0] == i[:i.find("_")]:
-                    card = i
-            if card == "":
-                # For debugging
-                print(f"{appearances}\n\n{mostAppeared} and {canPlayWild}, Unable to use card\n*******************")
-                card = usableCards[random(0, len(usableCards)-1)]
+
+            string = ''.join(usableCards)
+            appearances = {"Green": string.count("Green"), "Blue": string.count("Blue"), "Red": string.count("Red"), "Yellow": string.count("Yellow"), "Wild": string.count("Wild")}
+
+            mostAppeared = max(appearances.items(), key=operator.itemgetter(1))[0]
+
+            # finds first card of the most appeared colour (or wild)
+            card = [obj for obj in usableCards if mostAppeared in obj][0]
             self.useCard(None, card)
             
 def generateDeck(dictionary):
