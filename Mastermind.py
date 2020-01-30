@@ -119,9 +119,16 @@ def hidePNEntries(showRules): # hides playerName widgets, can show rule widgets
         # show rule-related widgets
         backButton.place(relx=0.1, rely=0.8)
         rulesLabel.place(relx=0.5, rely=0.4, anchor = CENTER)
+
+def pegMoving(event, pegImage):
+    global duplicateHolder
+    duplicateHolder["image"] = pegImage
+    x, y = event.x, event.y
+    duplicateHolder.place(x=x,y=y)
     
 def pegDropped(event, colour):
     # find the widget under the cursor
+    duplicateHolder.place_forget()
     x,y = event.widget.winfo_pointerxy()
     target = event.widget.winfo_containing(x,y)
     try:
@@ -318,7 +325,7 @@ def gameOver(won):
         data.remove(tup)
     # when click show leaderboard, show leaderboard (obviously)
     leaderboardButton["command"] = lambda: showLeaderboard(leaderboardString)
-        
+    
 # Initalise entry for entering playerName
 playerNameLabel = Label(root, height=3, font=fontInfo, bg=rootCol, text="Enter your name: ")
 playerNameInput = Text(root, font=(fontType, 50), width=10, height=1, wrap=None)
@@ -400,6 +407,7 @@ for i, v in enumerate(possibleColours):
     pegList[-1].place(rely=i/6)
     # lambda is stupid
     pegList[-1].bind("<ButtonRelease-1>", lambdaFunc(pegDropped, v))
+    pegList[-1].bind("<B1-Motion>", lambdaFunc(pegMoving, pegImage))
 
 #  Make buttons
 checkButton = Button(root, text="CHECK", font=fontInfo)
@@ -408,6 +416,7 @@ resetButton.place(relx=0.02, rely=0.73)
 newGameButton = Button(root, text="NEW GAME", font=fontInfo, command=newGame)
 leaderboardButton = Button(root, text="SHOW LEADERBOARD", font=(fontType,12))
 hideLeaderboardButton = Button(root, text="BACK", font=fontInfo, command=hideLeaderboard)
+# Make labels
 gameOverLabel = Label(root, font=fontInfo, bg=rootCol, text=rulesString, wraplength=400, justify=LEFT)
 leaderboardLabel = Label(root, font=fontInfo, bg=rootCol, text=rulesString, wraplength=400, justify=LEFT)
-
+duplicateHolder = Label(root, bg=rootCol)
