@@ -1,8 +1,8 @@
 from tkinter import *
-from random import choices as selectFromList # more informative
+from random import choices
 from os import startfile
 from operator import itemgetter
-
+from functools import partial
 
 rootCol = "lightgoldenrodyellow"
 root = Tk()
@@ -19,7 +19,6 @@ bgHex = "#ADBEC9" # Background hex colour
 folder = "Mastermind_Assets"
 leaderboardFile = f"{folder}/leaderboard.txt"
 rows = 12
-lambdaFunc = lambda func, para: (lambda event: func(event, para))
 rulesString = f'''Mastermind Rules
  - Computer generates a random 4 colour code (colours can repeat).
  - The player chooses four code pegs per attempt to try and crack the code.
@@ -66,7 +65,7 @@ playerName = StringVar()
 rowList = []
 pegList = []
 solutionList = []
-correctCode = selectFromList(possibleColours, k=4) # generate code
+correctCode = choices(possibleColours, k=4) # generate code
 
 class PegHole(): 
     def __init__(self, position, colour, parent):
@@ -120,13 +119,14 @@ def hidePNEntries(showRules): # hides playerName widgets, can show rule widgets
         backButton.place(relx=0.1, rely=0.8)
         rulesLabel.place(relx=0.5, rely=0.4, anchor = CENTER)
 
-def pegMoving(event, pegImage):
-    global duplicateHolder
+def pegMoving(pegImage, event):
     duplicateHolder["image"] = pegImage
-    x, y = event.x, event.y
-    duplicateHolder.place(x=x,y=y)
+    x, y = root.winfo_pointerxy()
+    x -= root.winfo_rootx()
+    y -= root.winfo_rooty()
+    duplicateHolder.place(x=x,y=y, anchor=CENTER)
     
-def pegDropped(event, colour):
+def pegDropped(colour, event):
     # find the widget under the cursor
     duplicateHolder.place_forget()
     x,y = event.widget.winfo_pointerxy()
@@ -238,8 +238,9 @@ def newGame():
     newGameButton.place_forget()
     solutionFrame.place_forget()
     gameOverLabel.place_forget()
+    leaderboardButton.place_forget()
     # Reset variables
-    correctCode = selectFromList(possibleColours, k=4)
+    correctCode = choices(possibleColours, k=4)
     currRow = 0
     # Update solution for game over
     for i, obj in enumerate(solutionList):
@@ -406,8 +407,8 @@ for i, v in enumerate(possibleColours):
     pegList.append(Label(pegFrame, image=pegImage, bg=rootCol))
     pegList[-1].place(rely=i/6)
     # lambda is stupid
-    pegList[-1].bind("<ButtonRelease-1>", lambdaFunc(pegDropped, v))
-    pegList[-1].bind("<B1-Motion>", lambdaFunc(pegMoving, pegImage))
+    pegList[-1].bind("<ButtonRelease-1>", partial(pegDropped, v))
+    pegList[-1].bind("<B1-Motion>", partial(pegMoving, pegImage))
 
 #  Make buttons
 checkButton = Button(root, text="CHECK", font=fontInfo)
