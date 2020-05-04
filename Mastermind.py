@@ -1,16 +1,16 @@
 from tkinter import *
 from random import choices
-from os import startfile
 from operator import itemgetter
 from functools import partial
 
 rootCol = "lightgoldenrodyellow"
 root = Tk()
 root.geometry("500x400")
-root.title("Mastermind")
+root.title("Mastermind Game")
 root.resizable(False,False)
 root.configure(bg=rootCol)
 
+# Constants
 possibleColours = ["Blue", "White", "Orange", "Green", "Red", "Yellow"]
 fontSize = 20
 fontType = "Arial"
@@ -39,7 +39,6 @@ Congratulations, %s, you won!
 It took you %d %s!
 ''' 
 
-currRow = 0
 images = {
     "PegHole": PhotoImage(file=f"{folder}/pegHole.png"),
     "MiniHole": PhotoImage(file=f"{folder}/feedbackPegHole.png"),
@@ -60,7 +59,8 @@ images = {
     }
 
 
-
+# These change during the code (variables)
+currRow = 0
 playerName = StringVar()
 rowList = []
 pegList = []
@@ -77,26 +77,20 @@ class PegHole():
             self.image = images["PegHole"]
             backGround = bgHex
         self.label = Label(parent, image=self.image, bg=backGround)
-        self.label.bind("<1>", lambda e: self.removeColour())
-        self.width = self.image.width()
-        self.height = self.image.height()
+        if self.colour == None:
+            self.label.bind("<1>", lambda e: self.removeColour())
         self.label.place(relx=position/5)
-        self.peg = False
-        self.x = position
-
+        
     def changeColour(self, colour):
         self.colour = colour
-        self.peg = True
         self.image = images[f"PegHole_{colour}"]
         self.label["image"] = self.image
 
     def removeColour(self):
         self.image = images["PegHole"]
         self.label["image"] = self.image
-        self.peg = False
         self.colour = None
-        if self in rowList[currRow]:
-            checkButton.place_forget()
+        checkButton.place_forget()
 
 def placePNEntries(): # place PlayerName entries
     playerNameLabel.place(relx=0.5, rely=0.4, anchor="s")
@@ -144,18 +138,15 @@ def pegDropped(colour, event):
         for i, obj in enumerate(rowList[y]):
             if type(obj) == list:
                 break
-            elif not obj.peg:
-                if i == len(rowList[y]) - 1: # last peg
-                    x = -i
-                else:
-                    x = i
+            elif not obj.colour:
+                x = i
                 break
 
     # update row colours
     rowList[y][x].changeColour(colour)
     currCode = []
     for obj in rowList[y]:
-        if type(obj) == list or not obj.peg:
+        if type(obj) == list or not obj.colour:
             break
         else:
             currCode.append(obj.colour)
@@ -169,8 +160,11 @@ def pegDropped(colour, event):
         
 def validateCode(currCode):
     global currRow
-    currRow += 1
     checkButton.place_forget()
+    for obj in rowList[currRow]:
+        if type(obj) != list:
+            obj.label.unbind("<1>")
+    currRow += 1
     if currCode == correctCode:
         # won
         gameOver(True)
@@ -185,7 +179,6 @@ def validateCode(currCode):
         otherwise Wrong colour, wrong place (no image change)
         '''
         feedback = []
-        remainingCode = []
         remCorrectCode = [] # remaining correct code
         appeared = {}
         for index, colour in enumerate(currCode):
@@ -209,24 +202,18 @@ def validateCode(currCode):
 
         # visually show feedback
         container = rowList[currRow-1][-1]
-        n = 0
         # variable used in favour of enumerate() index, to avoid having gaps in the feedback
-        for v in feedback:
+        for n, v in enumerate(feedback):
             if v == "P":
                 # change Black
                 container[n]["image"] = images["MiniHole_Black"]
-                n += 1
             else:
-                container[n]["image"] = images["MiniHole_White"]
-                n += 1       
+                container[n]["image"] = images["MiniHole_White"]     
         
 def resetRow():
     for obj in rowList[currRow]:
-        try:
+        if type(obj) != list:
             obj.removeColour()
-        except Exception as error: # list
-            #print(error)# for error checking
-            pass
 
 def newGame():
     global correctCode, currRow
@@ -249,9 +236,9 @@ def newGame():
     # Reset board
     for row in rowList:
         for obj in row:
-            try:
+            if type(obj) != list:
                 obj.removeColour()
-            except: # list
+            else: # list
                 for hole in obj:
                     hole["image"] = images["MiniHole"]
 
@@ -300,11 +287,7 @@ def gameOver(won):
     with open(leaderboardFile)as aFile:
         for line in aFile:
             fields = line.rstrip("\n").split("; ")
-            nameList = []
-            for i, v in enumerate(fields): # allows for usernames with "; " inside
-                if i != len(fields)-1:
-                    nameList.append(v)
-            name = '; '.join(nameList) # re-add the "; "s to the name
+            name = fields[0]
             try:
                 if data[name] > fields[-1]: # old value took more tries
                     data[name] = fields[-1]
@@ -343,10 +326,10 @@ startButton.wait_variable(playerName)
 hidePNEntries(False)
 
 # Validate playerName input
-if len(playerName.get()) == 0:
-    playerName = "Player"
-else:
+if playerName.get().isalpha() and len(playerName.get()) >= 3:
     playerName = playerName.get()
+else:
+    playerName = "Player"
 
 # Create board
 root.geometry("500x730")
@@ -370,7 +353,7 @@ rowList = [
         rowList[-1][-1][0-4] = feedback peg holes
 
     in the following code, "-1"s can usually be replaced by the for loop variable names (e.g. i, j etc)
-    However, -1 is used to make it easier to understand
+    However, -1 is used to make it easier to understand.
 ]
 '''
 
@@ -406,7 +389,6 @@ for i, v in enumerate(possibleColours):
     pegImage = images[f"{v}_Peg"]
     pegList.append(Label(pegFrame, image=pegImage, bg=rootCol))
     pegList[-1].place(rely=i/6)
-    # lambda is stupid
     pegList[-1].bind("<ButtonRelease-1>", partial(pegDropped, v))
     pegList[-1].bind("<B1-Motion>", partial(pegMoving, pegImage))
 
