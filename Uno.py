@@ -169,7 +169,7 @@ class Player():
             if self.side == "H":
                 obj.place(relx=i/len(self.objects), rely=0, anchor="ne")
             else:
-                i -= 2
+                i -= 1
                 obj.place(relx=0, rely=i/len(self.objects), anchor="nw")
             root.update()
             
