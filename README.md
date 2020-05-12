@@ -1,9 +1,7 @@
 # Games
 
-There is only Uno. Yay.
+Uno has a few bugs. Will fix whenever I get the time.
 
-Smaller moniters get the worse layout, still playable.
+Mastermind has no known bugs (i.e. please inform of any bugs!)
 
-Up to 4 players/bots Uno w/ working action cards.
-
-Yet to be optimised. Going to make the bots think better... it's on my TO-DO list.
+Minesweeper has no known bugs (i.e. please inform of any bugs!)
