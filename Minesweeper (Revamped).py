@@ -10,7 +10,7 @@ root.title("Minesweeper 2.0")
 root.resizable(False,False)
 root.configure(bg=col)
 
-bombs = 40
+bombs = 10
 tileSize = 40
 headerY = (650-(14*tileSize))//2.5
 headerX = (800-(18*tileSize))//1.5
@@ -223,6 +223,7 @@ def restartGame(event):
     clock.reset()
     started = False
     playing = True
+    flagsLabel["text"] = f"{bombs}"
     for i, tile in tiles.items():
         tile.reset()
         
