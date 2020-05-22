@@ -54,10 +54,10 @@ images = {"Red": PhotoImage(file=f"{folder}/Table_0.png"), # Dark Red
           "UNO": PhotoImage(file=f"{folder}/Logo.png"), # big sign
           "UNO_Button": PhotoImage(file=f"{folder}/UnoButton.png"),
           "S_Red": PhotoImage(file=f"{folder}/S_Table_0.png"), # Dark red for smaller resolutions
-          "S_Purple": PhotoImage(file=f"{folder}/Table_1.png"),
-          "S_Green": PhotoImage(file=f"{folder}/Table_2.png"),
-          "S_Blue": PhotoImage(file=f"{folder}/Table_3.png"),
-          "S_B_Green": PhotoImage(file=f"{folder}/Table_4.png")
+          "S_Purple": PhotoImage(file=f"{folder}/S_Table_1.png"),
+          "S_Green": PhotoImage(file=f"{folder}/S_Table_2.png"),
+          "S_Blue": PhotoImage(file=f"{folder}/S_Table_3.png"),
+          "S_B_Green": PhotoImage(file=f"{folder}/S_Table_4.png")
           }
 
 # If you're going to change background colour, you have to change these too.
