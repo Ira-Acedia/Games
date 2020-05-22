@@ -10,7 +10,7 @@ root.title("Minesweeper 2.0")
 root.resizable(False,False)
 root.configure(bg=col)
 
-bombs = 5
+bombs = 40
 tileSize = 40
 headerY = (650-(14*tileSize))//2.5
 headerX = (800-(18*tileSize))//1.5
