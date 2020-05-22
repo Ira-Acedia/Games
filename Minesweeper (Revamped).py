@@ -10,7 +10,7 @@ root.title("Minesweeper 2.0")
 root.resizable(False,False)
 root.configure(bg=col)
 
-bombs = 40
+bombs = 5
 tileSize = 40
 headerY = (650-(14*tileSize))//2.5
 headerX = (800-(18*tileSize))//1.5
@@ -26,6 +26,7 @@ images = {
     "trophy": PhotoImage(file=f"{folder}/trophy.png"),
     "timer": PhotoImage(file=f"{folder}/timer.png"),
     "restart": PhotoImage(file=f"{folder}/restart.png"),
+    "resultFrame": PhotoImage(file=f"{folder}/resultFrame.png"),
     "values": [
         PhotoImage(file=f"{folder}/zero.png"),
         PhotoImage(file=f"{folder}/one.png"),
@@ -252,20 +253,19 @@ def gameWon():
 def fstr(self): # allows usage of f-strings without string literal
     return str(eval(f"f'{self.format}'"))
 
-# Create tiles
-for x in range(18):
-    for y in range(14):
-        tiles[f"{x}.{y}"] = Tile(x, y)
-
-clock = Clock()
-
 def createPairedCounter(parent, picture, baseText, textCol, yPad, bg): # Pair = image + label. for timer etc & result label
     img = Label(parent, image=images[picture], bg=bg)
     label = Label(parent, text=baseText, font=("Arial", 20), bg=bg, fg=textCol)
     img.place(x=0, y=0, anchor="nw")
     label.place(x=35, y=yPad, anchor="nw")
     return label
-    
+
+# Create tiles
+for x in range(18):
+    for y in range(14):
+        tiles[f"{x}.{y}"] = Tile(x, y)
+
+clock = Clock()
 # Setup visual displays
 timerFrame = Frame(root, width=(800//5),height=30, bg=col)
 bestTimeFrame = Frame(root, width=(800//5), height=36, bg=col)
@@ -284,24 +284,23 @@ bestTimeFrame.place(x=headerX+2*(800//5)+10, y=headerY+3, anchor="sw")
 bestTimeLabel = createPairedCounter(bestTimeFrame, "trophy", "0", "grey", 0, col)
 
 # Setup result frame
-resultFrame = Frame(root, width=400, height=250, bg=resultCol)
-#resultFrame.place(relx=0.5,rely=0.5, anchor=CENTER)
+resultFrame = Label(root, width=400, height=275, bg=resultCol, image=images["resultFrame"])
 
 # Timers
 resultTimeFrame = Frame(resultFrame, width=200, height=30, bg=resultCol)
 recordTimeFrame = Frame(resultFrame, width=200, height=36, bg=resultCol)
 resultTimeLabel = createPairedCounter(resultTimeFrame, "timer", "0", "grey", -3, resultCol)
 recordTimeLabel = createPairedCounter(recordTimeFrame, "trophy", "0", "grey", 0, resultCol)
-resultTimeFrame.place(relx=0.15, y=5, anchor="nw")
-recordTimeFrame.place(relx=0.15, y=45, anchor="nw")
+resultTimeFrame.place(relx=0.15, y=15, anchor="nw")
+recordTimeFrame.place(relx=0.15, y=55, anchor="nw")
 
 # Feedback text
 feedback = Label(resultFrame, font=("Arial", 30), bg=resultCol, text="Test!")
-feedback.place(relx=0.5, y=90, anchor="n")
+feedback.place(relx=0.5, y=100, anchor="n")
 
 # Restart Button
 restartButton = Label(resultFrame, image=images["restart"], bg=resultCol)
-restartButton.place(relx=0.5, y=140, anchor="n")
+restartButton.place(relx=0.5, y=150, anchor="n")
 restartButton.bind("<1>", restartGame)
 
 root.mainloop()
